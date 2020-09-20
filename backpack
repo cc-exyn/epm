@@ -211,7 +211,7 @@ local TransQueue = {
 		}
 	end,
 	finish = function(self)
-		local installedFile = fs.combine(fs.combine(backpack.installRoot, "/etc/.installed"), self.pack.fullName)
+		local installedFile = fs.combine(fs.combine(backpack.installRoot, "/exyn/epm/.installed"), self.pack.fullName)
 		local installedData = {}
 		if installed[self.pack.fullName] and fs.exists(installedFile) then
 			local handle = io.open(installedFile, "r")
@@ -286,7 +286,7 @@ local TransQueue = {
 		else
 			--write out file again, if any content exists for it.
 			table.insert(installedData, 1, tostring(self.pack.version))
-			if not fs.exists(fs.combine(fs.combine(backpack.installRoot, "/etc/.installed"), self.pack.repo)) then fs.makeDir(fs.combine(fs.combine(backpack.installRoot, "/etc/.installed"), self.pack.repo)) end
+			if not fs.exists(fs.combine(fs.combine(backpack.installRoot, "/exyn/epm/.installed"), self.pack.repo)) then fs.makeDir(fs.combine(fs.combine(backpack.installRoot, "/exyn/epm/.installed"), self.pack.repo)) end
 			local handle = io.open(installedFile, "w")
 			if handle then
 				for k, v in ipairs(installedData) do
@@ -567,7 +567,7 @@ local Package = {
 		local queue
 		if downloadFunctions[self.download.help.type] then
 			queue = newTransactionQueue(self.fullName)
-			if not downloadFunctions[self.download.help.type](self, env, queue, self.download.help, fs.combine("/etc/help", self.fullName)) then return false end
+			if not downloadFunctions[self.download.help.type](self, env, queue, self.download.help, fs.combine("/exyn/docs", self.fullName)) then return false end
 		else
 			return false
 		end
@@ -642,9 +642,9 @@ local Package = {
 			queue:removeDir(path)
 		end
 
-		if fs.exists(fs.combine(backpack.installRoot, fs.combine("/etc/help", self.fullName))) then
-			removeAllFiles(fs.combine(backpack.installRoot, fs.combine("/etc/help", self.fullName)))
-			queue:removeDir(fs.combine(backpack.installRoot, fs.combine("/etc/help", self.repo)))
+		if fs.exists(fs.combine(backpack.installRoot, fs.combine("/exyn/docs", self.fullName))) then
+			removeAllFiles(fs.combine(backpack.installRoot, fs.combine("/exyn/docs", self.fullName)))
+			queue:removeDir(fs.combine(backpack.installRoot, fs.combine("/exyn/docs", self.repo)))
 		end
 		return queue:finish()
 	end,
@@ -681,7 +681,7 @@ local Package = {
 
 			for i, fileInfo in ipairs(backpack.installed[self.fullName].files) do
 				--skip over the help files when deleting files not on the upgrade list.
-				if not string.match(fileInfo.path, "^/?etc/help/") then
+				if not string.match(fileInfo.path, "^/?exyn/docs/") then
 					if not updatedFiles[fileInfo.path] and fileInfo.version ~= backpack.installed[self.fullName].version then
 						if not fs.isDir(fs.combine(backpack.installRoot, fileInfo.path)) then
 							queue:removeFile(fileInfo.path)
@@ -697,7 +697,7 @@ local Package = {
 			if not downloadFunctions[self.download.type.type](self, env, queue, self.download.type, self.target) then return false end
 			return queue:finish()
 		elseif updateTypes[self.download.type.type] == "replace" then
-			if fs.exists(fs.combine(backpack.installRoot, fs.combine("/etc/help", self.fullName))) then
+			if fs.exists(fs.combine(backpack.installRoot, fs.combine("/exyn/docs", self.fullName))) then
 				--need to update help files as well as regular files
 				return self:remove(env) and self:installFiles(env) and self:installHelp(env) and self:finalizeInstall(env)
 			else
@@ -712,7 +712,7 @@ local Package = {
 		if updateTypes[self.download.help.type] == "incremental" then
 			local updatedFiles = {}
 			local contents = lookupFunctions[self.download.help.type](self.download.help)
-			local target = fs.combine("/etc/help", self.fullName)
+			local target = fs.combine("/exyn/docs", self.fullName)
 			for num, file in ipairs(contents) do
 				local path = fs.combine(target, file.path)
 				if file.version ~= findInstalledVersionByPath(self.fullName, path) then
@@ -741,7 +741,7 @@ local Package = {
 			for i, fileInfo in ipairs(backpack.installed[self.fullName].files) do
 				if not updatedFiles[fileInfo.path] and fileInfo.version ~= backpack.installed[self.fullName].version then
 					--skip over non-help files
-					if string.match(fileInfo.path, "^/?etc/help/") then
+					if string.match(fileInfo.path, "^/?exyn/help/") then
 						if not updatedFiles[fileInfo.path] and fileInfo.version ~= backpack.installed[self.fullName].version then
 							if not fs.isDir(fs.combine(backpack.installRoot, fileInfo.path)) then
 								queue:removeFile(fileInfo.path)
@@ -755,7 +755,7 @@ local Package = {
 
 			return queue.finish()
 		elseif updateTypes[self.download.help.type] == "overwrite" then
-			if not downloadFunctions[self.download.help.type](self, env, queue, self.download.help, fs.combine("/etc/help", self.fullName)) then return false end
+			if not downloadFunctions[self.download.help.type](self, env, queue, self.download.help, fs.combine("/exyn/docs", self.fullName)) then return false end
 			return queue:finish()
 		elseif updateTypes[self.download.help.type] == "replace" then
 			return self:removeHelp(env) and self:installHelp(env)
@@ -803,7 +803,7 @@ function new(name, repo)
 		category = {},
 		dependencies = {},
 		--installation folder target
-		target = "/usr/bin",
+		target = "/exyn/systemApps",
 		setup = nil,
 		remove = nil,
 		download = {}
@@ -831,7 +831,7 @@ function findDependencies(packageName, _dependencyTable)
 	return dependencyTable
 end
 
-if not fs.exists("/usr/bin") then fs.makeDir("/usr/bin") end
+if not fs.exists("/exyn/systemApps") then fs.makeDir("/exyn/systemApps") end
 --process package list
 local function addPacks(file)
 	local packName = fs.getName(file)
@@ -860,7 +860,7 @@ local function addPacks(file)
 			if property == "name" and state == "" then
 				if state == "" then
 					entryTable = new(string.lower(value), packName)
-					entryTable.target = "/usr/bin"
+					entryTable.target = "/exyn/systemApps"
 					state = "main"
 				else
 					if state ~= "dirty" then
@@ -977,20 +977,20 @@ function load()
 	for k, v in pairs(backpack.list) do
 		backpack.list[k] = nil
 	end
-	if fs.exists("/etc/repositories") then
-		for _, file in ipairs(fs.list("/etc/repositories")) do
-			addPacks(fs.combine("/etc/repositories", file))
+	if fs.exists("/exyn/epm/repositories") then
+		for _, file in ipairs(fs.list("/exyn/epm/repositories")) do
+			addPacks(fs.combine("/exyn/epm/repositories", file))
 		end
 	end
 
 	for k, v in pairs(backpack.installed) do
 		backpack.installed[k] = nil
 	end
-	if fs.exists(fs.combine(backpack.installRoot, "/etc/.installed")) and fs.isDir(fs.combine(backpack.installRoot, "/etc/.installed")) then
-		for _, repo in ipairs(fs.list(fs.combine(backpack.installRoot, "/etc/.installed"))) do
-			for _, file in ipairs(fs.list(fs.combine(fs.combine(backpack.installRoot, "/etc/.installed"), repo))) do
+	if fs.exists(fs.combine(backpack.installRoot, "/exyn/epm/.installed")) and fs.isDir(fs.combine(backpack.installRoot, "/exyn/epm/.installed")) then
+		for _, repo in ipairs(fs.list(fs.combine(backpack.installRoot, "/exyn/epm/.installed"))) do
+			for _, file in ipairs(fs.list(fs.combine(fs.combine(backpack.installRoot, "/exyn/epm/.installed"), repo))) do
 				local name = repo.."/"..file
-				local handle = io.open(fs.combine(fs.combine(fs.combine(backpack.installRoot, "/etc/.installed"), repo), file), "r")
+				local handle = io.open(fs.combine(fs.combine(fs.combine(backpack.installRoot, "/exyn/epm/.installed"), repo), file), "r")
 				if handle then
 					installed[name] = {files = {}}
 					local packVersion
