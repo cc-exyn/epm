@@ -450,8 +450,8 @@ local function upgradeHelp(name)
 end
 
 if mode == "bootstrap" then
-	--initial setup, results in main/packman and main/backpack packages being installed
-	if not backpack or backpack.list["main/packman"] == nil then
+	--initial setup, results in main/epm and main/backpack packages being installed
+	if not backpack or backpack.list["main/epm"] == nil then
 		--grab the backpack API, since we have no transaction queue yet.
 		io.write("Updating Backpack API\n")
 		remoteHandle = http.get("https://raw.githubusercontent.com/cc-exyn/epm/master/backpack")
@@ -472,7 +472,7 @@ if mode == "bootstrap" then
 		end
 
 		io.write("Fetching main package list\n")
-		remoteHandle = http.get("https://raw.githubusercontent.com/cc-exyn/epm/master/packlistpacklist")
+		remoteHandle = http.get("https://raw.githubusercontent.com/cc-exyn/epm/master/packlist")
 		local packlistContents = ""
 		if remoteHandle then
 			if not fs.exists("/exyn/epm/repositories") then fs.makeDir("/exyn/epm/repositories") end
@@ -495,8 +495,6 @@ if mode == "bootstrap" then
 
 		--re-do the file writes for the files above so they end up in the package file list.
 		local queue = backpack.newTransactionQueue("main/backpack")
-		queue:makeDir("/exyn")
-		queue:makeDir("/exyn/apis")
 		queue:addFile("/exyn/apis/backpack", apiContents)
         queue:makeDir("/exyn/epm")
         queue:makeDir("/exyn/epm/repositories")
@@ -504,7 +502,7 @@ if mode == "bootstrap" then
 		queue:finish()
 	end
 
-	backpack.list["main/packman"]:install(getfenv())
+	backpack.list["main/epm"]:install(getfenv())
 
 	--reload backpack API.
 	os.unloadAPI("backpack")
