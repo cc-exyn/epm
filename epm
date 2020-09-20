@@ -51,9 +51,7 @@ if #args < 1 or (not opwords[args[1]] and not argwords[args[1]]) then
 	io.write("auto\n")
 	io.write("  Automatically answer yes when manipulating packages\n")
 	--io.write("target <directory>\n")
-    --io.write("  Set root directory to install packages in\n")
-    io.write("\n")
-    io.write("epm by The Exyn Project Team is based on Packman by Lyqyd")
+    	--io.write("  Set root directory to install packages in\n")
 	return
 end
 
